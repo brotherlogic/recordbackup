@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package recordbackup;
+
+import "github.com/brotherlogic/recordcollection/proto/recordcollection.proto";
+
+message Config {
+  repeated recordcollection.ReleaseMetadata metadata = 1;
+}
