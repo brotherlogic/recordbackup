@@ -35,6 +35,7 @@ func Init() *Server {
 		&pb.Config{},
 		&prodGetter{},
 	}
+	s.getter = &prodGetter{dial: s.DialMaster}
 	return s
 }
 
