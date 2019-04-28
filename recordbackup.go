@@ -12,6 +12,7 @@ import (
 
 	pbg "github.com/brotherlogic/goserver/proto"
 	pb "github.com/brotherlogic/recordbackup/proto"
+	pbrc "github.com/brotherlogic/recordcollection/proto"
 )
 
 const (
@@ -23,6 +24,7 @@ const (
 type Server struct {
 	*goserver.GoServer
 	config *pb.Config
+	getter getter
 }
 
 // Init builds the server
@@ -30,8 +32,34 @@ func Init() *Server {
 	s := &Server{
 		&goserver.GoServer{},
 		&pb.Config{},
+		&prodGetter{},
 	}
 	return s
+}
+
+type getter interface {
+	getRecords(ctx context.Context) ([]*pbrc.Record, error)
+}
+
+type prodGetter struct {
+	dial func(server string) (*grpc.ClientConn, error)
+}
+
+func (p prodGetter) getRecords(ctx context.Context) ([]*pbrc.Record, error) {
+	conn, err := p.dial("recordcollection")
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	client := pbrc.NewRecordCollectionServiceClient(conn)
+	req := &pbrc.GetRecordsRequest{Filter: &pbrc.Record{}}
+	resp, err := client.GetRecords(ctx, req, grpc.MaxCallRecvMsgSize(1024*1024*1024))
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.GetRecords(), nil
 }
 
 func (s *Server) save(ctx context.Context) {
