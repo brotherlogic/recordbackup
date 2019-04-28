@@ -4,6 +4,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
+	"time"
 
 	"github.com/brotherlogic/goserver"
 	"github.com/brotherlogic/keystore/client"
@@ -34,6 +35,7 @@ func Init() *Server {
 		&pb.Config{},
 		&prodGetter{},
 	}
+	s.getter = &prodGetter{dial: s.DialMaster}
 	return s
 }
 
@@ -128,5 +130,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to register: %v", err)
 	}
+
+	server.RegisterRepeatingTask(server.procRecords, "proc_records", time.Hour)
+
 	server.Serve()
 }
