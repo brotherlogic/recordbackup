@@ -9,11 +9,12 @@ import (
 
 func (s *Server) fullMatch(ctx context.Context, r1, r2 *pbrc.ReleaseMetadata) bool {
 	if r1.DateAdded == 0 {
-		s.RaiseIssue(ctx, "Bad Date", fmt.Sprintf("%v has not add date", r1.InstanceId), false)
+		s.RaiseIssue(ctx, "Bad Date", fmt.Sprintf("%v has no add date", r1.InstanceId), false)
 		return true
 	}
+
 	if r2.DateAdded == 0 {
-		s.RaiseIssue(ctx, "Bad Date", fmt.Sprintf("%v has not add date", r2.InstanceId), false)
+		s.RaiseIssue(ctx, "Bad Date", fmt.Sprintf("%v has no add date", r2.InstanceId), false)
 		return true
 	}
 
@@ -35,15 +36,17 @@ func (s *Server) procRecords(ctx context.Context) error {
 	}
 
 	for _, r := range recs {
-		var match *pbrc.ReleaseMetadata
-		for _, meta := range s.config.Metadata {
-			if s.fullMatch(ctx, r.GetMetadata(), meta) {
-				match = meta
+		if r.GetMetadata() != nil {
+			var match *pbrc.ReleaseMetadata
+			for _, meta := range s.config.Metadata {
+				if s.fullMatch(ctx, r.GetMetadata(), meta) {
+					match = meta
+				}
 			}
-		}
 
-		if match == nil {
-			s.config.Metadata = append(s.config.Metadata, match)
+			if match == nil {
+				s.config.Metadata = append(s.config.Metadata, r.GetMetadata())
+			}
 		}
 	}
 
