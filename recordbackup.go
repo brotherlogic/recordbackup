@@ -107,7 +107,12 @@ func (s *Server) Mote(ctx context.Context, master bool) error {
 
 // GetState gets the state of the server
 func (s *Server) GetState() []*pbg.State {
+	mapper := make(map[int32]int)
+	for _, m := range s.config.Metadata {
+		mapper[m.InstanceId]++
+	}
 	return []*pbg.State{
+		&pbg.State{Key: "records", Value: int64(len(mapper))},
 		&pbg.State{Key: "stored", Value: int64(len(s.config.Metadata))},
 	}
 }
