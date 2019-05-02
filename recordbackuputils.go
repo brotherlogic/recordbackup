@@ -35,8 +35,10 @@ func (s *Server) procRecords(ctx context.Context) error {
 		return err
 	}
 
+	count := 0
 	for _, r := range recs {
 		if r.GetMetadata() != nil {
+			count++
 			var match *pbrc.ReleaseMetadata
 			for _, meta := range s.config.Metadata {
 				if s.fullMatch(ctx, r.GetMetadata(), meta) {
@@ -49,6 +51,8 @@ func (s *Server) procRecords(ctx context.Context) error {
 			}
 		}
 	}
+
+	s.Log(fmt.Sprintf("Processed %v records", count))
 
 	s.save(ctx)
 	return nil
