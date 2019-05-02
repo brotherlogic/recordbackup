@@ -136,7 +136,7 @@ func main() {
 		log.Fatalf("Unable to register: %v", err)
 	}
 
-	server.RegisterRepeatingTask(server.procRecords, "proc_records", time.Hour)
+	server.RegisterRepeatingTask(server.procRecords, "proc_records", time.Minute*5)
 
 	server.Serve()
 }
