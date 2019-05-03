@@ -18,6 +18,11 @@ func (s *Server) fullMatch(ctx context.Context, r1, r2 *pbrc.ReleaseMetadata) bo
 		return true
 	}
 
+	// This is a different record entirely
+	if r1.InstanceId != r2.InstanceId {
+		return false
+	}
+
 	if r1.Cost != r2.Cost ||
 		r1.Category != r2.Category ||
 		r1.GoalFolder != r2.GoalFolder ||

@@ -42,6 +42,19 @@ func TestFullMatchFailOnMissingDateAdded(t *testing.T) {
 
 }
 
+func TestFullMatchFailOnDifferentIds(t *testing.T) {
+	s := InitTestServer()
+	match1 := s.fullMatch(context.Background(), &pbrc.ReleaseMetadata{DateAdded: 1}, &pbrc.ReleaseMetadata{InstanceId: 1, DateAdded: 1})
+	if match1 {
+		t.Errorf("Matched on diff ids")
+	}
+	match2 := s.fullMatch(context.Background(), &pbrc.ReleaseMetadata{InstanceId: 1, DateAdded: 1}, &pbrc.ReleaseMetadata{DateAdded: 2})
+	if match2 {
+		t.Errorf("Matched on diff ids")
+	}
+
+}
+
 func TestStandardMatch(t *testing.T) {
 	s := InitTestServer()
 	err := s.procRecords(context.Background())
