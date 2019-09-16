@@ -55,7 +55,7 @@ func (p prodGetter) getRecords(ctx context.Context) ([]*pbrc.Record, error) {
 	defer conn.Close()
 
 	client := pbrc.NewRecordCollectionServiceClient(conn)
-	req := &pbrc.GetRecordsRequest{Filter: &pbrc.Record{}}
+	req := &pbrc.GetRecordsRequest{Caller: "recordbackup", Filter: &pbrc.Record{}}
 	resp, err := client.GetRecords(ctx, req, grpc.MaxCallRecvMsgSize(1024*1024*1024))
 	if err != nil {
 		return nil, err
