@@ -10,15 +10,23 @@ import (
 )
 
 type testGetter struct {
-	fail bool
+	fail    bool
+	failGet bool
 }
 
-func (t *testGetter) getRecords(ctx context.Context) ([]*pbrc.Record, error) {
+func (t *testGetter) getRecords(ctx context.Context, since int64) ([]int32, error) {
 	if t.fail {
-		return make([]*pbrc.Record, 0), fmt.Errorf("Built to fail")
+		return make([]int32, 0), fmt.Errorf("Built to fail")
 	}
 
-	return []*pbrc.Record{&pbrc.Record{Metadata: &pbrc.ReleaseMetadata{InstanceId: 100, Cost: 100, DateAdded: 1}}}, nil
+	return []int32{int32(100)}, nil
+}
+
+func (t *testGetter) getRecord(ctx context.Context, id int32) (*pbrc.Record, error) {
+	if t.failGet {
+		return nil, fmt.Errorf("Built to fail")
+	}
+	return &pbrc.Record{Metadata: &pbrc.ReleaseMetadata{InstanceId: 100, Cost: 100, DateAdded: 1}}, nil
 }
 
 func InitTestServer() *Server {
@@ -64,6 +72,15 @@ func TestStandardMatch(t *testing.T) {
 
 	if len(s.config.Metadata) != 1 {
 		t.Errorf("Record was not processed")
+	}
+}
+
+func TestStandardMatchWithGetFail(t *testing.T) {
+	s := InitTestServer()
+	s.getter = &testGetter{failGet: true}
+	err := s.procRecords(context.Background())
+	if err == nil {
+		t.Errorf("Error processing records: %v", err)
 	}
 }
 
