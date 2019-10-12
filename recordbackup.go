@@ -40,14 +40,32 @@ func Init() *Server {
 }
 
 type getter interface {
-	getRecords(ctx context.Context) ([]*pbrc.Record, error)
+	getRecords(ctx context.Context, since int64) ([]int32, error)
+	getRecord(ctx context.Context, id int32) (*pbrc.Record, error)
 }
 
 type prodGetter struct {
 	dial func(server string) (*grpc.ClientConn, error)
 }
 
-func (p prodGetter) getRecords(ctx context.Context) ([]*pbrc.Record, error) {
+func (p prodGetter) getRecords(ctx context.Context, since int64) ([]int32, error) {
+	conn, err := p.dial("recordcollection")
+	if err != nil {
+		return []int32{}, err
+	}
+	defer conn.Close()
+
+	client := pbrc.NewRecordCollectionServiceClient(conn)
+	resp, err := client.QueryRecords(ctx, &pbrc.QueryRecordsRequest{Query: &pbrc.QueryRecordsRequest_UpdateTime{since}})
+
+	if err != nil {
+		return []int32{}, err
+	}
+
+	return resp.GetInstanceIds(), err
+}
+
+func (p *prodGetter) getRecord(ctx context.Context, instanceID int32) (*pbrc.Record, error) {
 	conn, err := p.dial("recordcollection")
 	if err != nil {
 		return nil, err
@@ -55,13 +73,13 @@ func (p prodGetter) getRecords(ctx context.Context) ([]*pbrc.Record, error) {
 	defer conn.Close()
 
 	client := pbrc.NewRecordCollectionServiceClient(conn)
-	req := &pbrc.GetRecordsRequest{Caller: "recordbackup", Filter: &pbrc.Record{}}
-	resp, err := client.GetRecords(ctx, req, grpc.MaxCallRecvMsgSize(1024*1024*1024))
+	resp, err := client.GetRecord(ctx, &pbrc.GetRecordRequest{InstanceId: instanceID})
+
 	if err != nil {
 		return nil, err
 	}
 
-	return resp.GetRecords(), nil
+	return resp.GetRecord(), err
 }
 
 func (s *Server) save(ctx context.Context) {
@@ -112,6 +130,7 @@ func (s *Server) GetState() []*pbg.State {
 		mapper[m.InstanceId]++
 	}
 	return []*pbg.State{
+		&pbg.State{Key: "last_run", TimeValue: s.config.LastRun},
 		&pbg.State{Key: "records", Value: int64(len(mapper))},
 		&pbg.State{Key: "stored", Value: int64(len(s.config.Metadata))},
 	}

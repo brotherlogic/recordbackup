@@ -6,4 +6,5 @@ import "github.com/brotherlogic/recordcollection/proto/recordcollection.proto";
 
 message Config {
   repeated recordcollection.ReleaseMetadata metadata = 1;
+  int64 last_run = 2;
 }

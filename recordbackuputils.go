@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	pbrc "github.com/brotherlogic/recordcollection/proto"
 	"golang.org/x/net/context"
@@ -35,13 +36,17 @@ func (s *Server) fullMatch(ctx context.Context, r1, r2 *pbrc.ReleaseMetadata) bo
 }
 
 func (s *Server) procRecords(ctx context.Context) error {
-	recs, err := s.getter.getRecords(ctx)
+	ids, err := s.getter.getRecords(ctx, s.config.LastRun)
 	if err != nil {
 		return err
 	}
 
 	count := 0
-	for _, r := range recs {
+	for _, id := range ids {
+		r, err := s.getter.getRecord(ctx, id)
+		if err != nil {
+			return err
+		}
 		if r.GetMetadata() != nil {
 			count++
 			var match *pbrc.ReleaseMetadata
@@ -58,6 +63,7 @@ func (s *Server) procRecords(ctx context.Context) error {
 	}
 
 	s.Log(fmt.Sprintf("Processed %v records", count))
+	s.config.LastRun = time.Now().Unix()
 
 	s.save(ctx)
 	return nil
